@@ -1,0 +1,342 @@
+---
+title: "ggplot2_exercises_solution"
+author: "Radovan Kavicky"
+date: "January 13, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 2.2.1 Exercises
+
+1. 5 Functions for more information about mpg dataset
+```{r}
+library(tidyverse)
+```
+
+```{r}
+# Get structure of mpg
+str(mpg)
+glimpse(mpg)
+
+# Dimensions
+dim(mpg)
+
+# A small glimpse of the data
+head(mpg)
+tail(mpg)
+
+# Variables in the data
+names(mpg)
+```
+
+2. Finding out other datasets in ggplot2
+  
+  > data(package = "ggplot2") 
+*This should open up a new window named "R data sets"
+
+3. Conversion of cty and hwy into European standard of 1/100km
+```{r}
+# Original cty and hwy variables are in miles per gallon (mpg). So, I did some research online: (https://www.unitjuggler.com/convert-fuelconsumption-from-mpg-to-lper100km.html) 
+#Let's multiply cty and hwy by 235.21
+mpg %>% 
+  mutate(cty = cty*235.21, hwy = hwy*235.21)
+```
+4. Manufacturer with the most models? Model with most variations? Remove redundant specification of drive train from model name?
+```{r}
+mpg %>% 
+  count(manufacturer, sort = T)
+
+# Assumption: Model with the most variations means model with most variations in drv variable
+mpg %>% 
+  group_by(model, manufacturer, drv) %>% 
+  summarise(sum_drv = as.numeric(table(drv)))
+```
+* Dodge has the most models!  
+_Need help with getting varations in the models_
+
+## 2.3.1 Exercises
+
+1. Relationship between cty and hwy.
+```{r}
+mpg %>% ggplot(aes(cty, hwy)) +
+  geom_point()
+```
+* Relationship is linear, positive, and strong without any glaring outliers. The only concern I have about the plot is that _it is almost too perfect_. Perhaps multicollinearity?
+
+2.
+```{r, echo = F}
+ggplot(mpg, aes(model, manufacturer)) +
+  geom_point()
+```
+* The problem is there are too many x-axis labels, so its impossible to read the values. One fix would be to shorten the model names: get rid of drv values ,manufacturers, and spaces. If this does not suffice, rotate the x-axis values 90 degrees.
+
+3. The first two graphs will be scatterplots. #1 graph will have a high correlation and be linear, as we saw above. #2 graph should show a positive relationship (common sense?). #3 graph will be a line graph that changes with time (x-axis). #4 graph will be a histogram with counts of cty on the y-axis.
+
+## 2.4.1 Exercises
+
+1.
+```{r, echo = F}
+# Mapping to categoorical variable
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = drv))
+
+# Mapping to continuous variable
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = year))
+```
+* Based upon these graphs, mapping color to categorical variable is informative while mapping it to continiuous variable is not. 
+
+```{r, echo = F, error = T}
+# Mapping to categoorical variable
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(shape = drv))
+
+# Mapping to continuous variable
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(shape = year))
+```
+Mapping categorical variable to shape works (produces a graph), but readability is very poor. Mapping to continuous variable throws an error
+
+```{r}
+# Mapping to categoorical variable
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(size = drv))
+
+# Mapping to continuous variable
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(size = year))
+```
+* Mapping categorical/continuous variable to size works, but readbility is very poor.
+
+### Using 2 aesthetics in a plot
+```{r, echo = F}
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(size = drv, color = drv))
+```
+* Ah, readability is much better.
+
+2. When you map a continuous variable to shape, you get an error. Why:The shape palette can deal with a maximum of 6 discrete values because more than 6 becomes difficult to discriminate (ggplot2 documentation).
+```{r, echo = F}
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(shape = trans))
+```
+* ggplot2 only takes 6 discrete values! If we want more shapes, we have to manually designate them.
+
+3.
+```{r, echo = F}
+ggplot(mpg, aes(drv, cty)) +
+  geom_bar(stat = "identity")
+```
+* Looks like "f" has the most fuel economy, followed by "4" and "r"
+
+```{r}
+ggplot(mpg, aes(drv, displ)) +
+  geom_bar(stat = "identity")
+
+ggplot(mpg, aes(drv, ..count..)) +
+  geom_bar(aes(fill = class), position = "dodge")
+```
+
+```{r}
+library(tidyverse)
+ggplot(mpg, aes(cty, displ)) +
+  geom_point() +
+  facet_wrap(~hwy)
+```
+* When faceting by a continuous variable hwy, I get alot of graphs here with little information in each graph. I don't imagine these graphs to be useful.
+```{r}
+ggplot(mpg, aes(cty, displ)) +
+  geom_point() +
+  facet_wrap(~cyl)
+```
+* You see some information for all the cylinders except 5 cylinder graph.
+
+* I think the key difference is that a continous variable has so many values that its impossible to get alot of information for each facetted graph. It has minimal information. On the other hand, for categorical variables, there are not many facetted graphs, so you get a reasonable amount of information from each graph.
+
+2.
+```{r}
+ggplot(mpg, aes(displ, cty)) +
+  geom_point() +
+  facet_wrap(~cyl)
+```
+* First, you can't really say much about 5 cylinder cars since there are only two data points for them. for 4 cylinder cars, most cars have small engine displacement and high fuel economy (compared to 6 and 8 cylinder cars). For 6 cylinder cars, the engine displacement ranges from 3 to 4 liters, but has low fuel economy. Last, for 8 cylinder cars, it is on the high range of engine displacement, but has low fuel economy. 
+
+3.
+```{r}
+?facet_wrap
+```
+
+* You can adjust nrow, ncol arguments to control how many rows / columns in the output.
+
+4. The documentation says, "should Scales be fixed ("fixed", the default), free ("free"), or free in one dimension ("free_x", "free_y")."
+
+## 2.6.6 Exercises
+
+1. x values and y values are closely related (multicollinearity?)
+```{r}
+# To remedy the problem, graph two separate histograms
+ggplot(mpg, aes(cty)) +
+  geom_histogram(binwidth = 1)
+
+ggplot(mpg, aes(hwy)) +
+  geom_histogram(binwidth = 1)
+```
+2. 
+```{r}
+ggplot(mpg, aes(class,hwy)) +
+  geom_boxplot()
+ggplot(mpg, aes(reorder(class,hwy), hwy)) +
+  geom_boxplot()
+```
+* reorder(class, hwy) reorders class levels based on values of hwy.
+3.
+```{r}
+ggplot(diamonds, aes(carat)) +
+  geom_histogram(binwidth = 0.2)
+```
+
+4.
+```{r}
+ggplot(diamonds, aes(price)) +
+  geom_histogram() +
+  facet_wrap(~cut)
+```
+5. Violin plots give richest display, but rely on distribution of a density estimate, which can be hard to interpret. 
+
+_Help with geom_freqpoly with colors and geom_histogram with faceting_
+
+6.
+```{r}
+?geom_bar()
+g <- ggplot(mpg, aes(class))
+# Number of cars in each class:
+g + geom_bar()
+# Total engine displacement of each class
+g + geom_bar(aes(weight = displ))
+```
+* weight aesthetic in the above code "weights" the number of cars in each class according to engine displacement.
+
+7. _Need Help with this Question_
+
+## 3.2.1 Exercises
+
+1. 
+* Scatterplot: geom_point()
+* Line Chart: geom_line()
+* Histogram: geom_histogram()
+* Bar chart: geom_bar()
+* Pie chart: According to http://ggplot2.tidyverse.org/reference/coord_polar.html , the polar coordinate system is most commonly used for pie charts, which are a stacked bar chart in polar coordinates. A pie chart = stacked bar chart + polar coordinates (geom_bar() + coord_polar())
+
+2. Polygons are very similar to paths (as drawn by geom_path) except that the start and end points are connected and the inside is coloured by fill. The group aesthetic determines which cases are connected together into a polygon.
+geom_path() connects the observations in the order in which they appear in the data. geom_line() connects them in order of the variable on the x axis.
+
+3. _Not sure what Hadley means by low-level geoms_ Here is some information on parameters used in geom_smooth(). http://ggplot2.tidyverse.org/reference/geom_smooth.html
+geom_boxplot(): http://ggplot2.tidyverse.org/reference/geom_boxplot.html
+geom_violin(): http://ggplot2.tidyverse.org/reference/geom_violin.html
+```{r}
+library(tidyverse)
+ggplot(economics, aes(date, unemploy)) +
+  geom_line()
+
+presidential <- subset(presidential, start > economics$date[1])
+ggplot(economics) +
+  geom_rect(
+    aes(xmin = start, xmax = end, fill = party),
+    ymin = -Inf, ymax = Inf, alpha = 0.2,
+    data = presidential
+  ) +
+  geom_vline(
+    aes(xintercept = as.numeric(start)),
+    data = presidential,
+    colour = "grey50", alpha = 0.5
+  ) +
+  geom_text(
+    aes(x = start, y = 2500, label = name),
+    data = presidential,
+    size = 3, vjust = 0, hjust = 0, nudge_x = 50
+  ) +
+  geom_line(aes(date, unemploy)) +
+  scale_fill_manual(values = c("blue", "red"))
+
+ggplot(nlme::Oxboys, aes(age, height, group = Subject)) +
+  geom_point() +
+  geom_line()
+```
+## 3.5.5 Exercises
+
+1. 
+```{r}
+library(tidyverse)
+head(mpg)
+mpg %>% 
+  ggplot(aes(x = cyl, y = hwy)) +
+  geom_boxplot(aes(group = cyl))
+```
+* I need to set group aesthetic and set it to cyl
+
+2. 
+```{r}
+mpg %>% 
+  ggplot(aes(displ, cty)) +
+  geom_boxplot(aes(group = displ))
+```
+3. Tricky
+
+4. 
+```{r}
+ggplot(mpg, aes(drv)) +
+  geom_bar() # 3 bars
+
+ggplot(mpg, aes(drv, fill = hwy, group = hwy)) +
+  geom_bar() # 3 bars
+
+library(dplyr)
+mpg2 <- mpg %>% arrange(hwy) %>% mutate(id = seq_along(hwy))
+ggplot(mpg2, aes(drv, fill = hwy, group = id), color = "red") +
+  geom_bar() # 3 bars
+```
+5.
+```{r}
+#install.packages("babynames")
+library(babynames)
+hadley <- filter(babynames, name == "Hadley")
+hadley
+ggplot(hadley, aes(year, n, color = sex)) +
+  geom_line() +
+  labs(y = "Count", x = "Year", title = "The baby name Hadley is more popular among baby girls")
+```
+## 3.11.1 Exercises
+
+1. 
+```{r}
+diamonds %>% 
+  ggplot(aes(carat)) +
+  geom_histogram(binwidth = 0.1)
+```
+* I think a binwidth of 0.1 tells you the most correct graph.
+
+2.
+```{r}
+diamonds %>% 
+  ggplot(aes(price)) +
+  geom_histogram()
+```
+* I see a distribution where as price increases, count decreases. Heavily right-skewed.
+
+3.
+```{r}
+ggplot(diamonds, aes(clarity, price)) +
+  geom_boxplot()
+```
+* It seems like as clarity changes from worst (I1) to best (IF), median of prices decreases
+
+4.
+```{r}
+ggplot(diamonds, aes(depth)) +
+  geom_density(alpha = 0.1) +
+  geom_freqpoly()
+```
+_Need Help with determining variable_ 
